@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include "printf.h"
 
+#define MAP_ANONYMOUS       32
+
 void *os_malloc(size_t size);
 void os_free(void *ptr);
 void *os_calloc(size_t nmemb, size_t size);
