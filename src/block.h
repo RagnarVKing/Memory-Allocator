@@ -2,10 +2,14 @@
 
 #pragma once
 
+#include <errno.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <string.h>
 #include "printf.h"
 #include "block_meta.h"
-#include "osmem.h"
-
 #define MMAP_THRESHOLD      (128 * 1024)
 
 extern struct block_meta *head;

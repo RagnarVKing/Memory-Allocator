@@ -9,7 +9,6 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <string.h>
-#include "osmem.h"
 #include "block_meta.h"
 
 void *os_malloc(size_t size);

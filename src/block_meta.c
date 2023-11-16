@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "block_meta.h"
 #include "block.h"
 
 block_meta * head;
