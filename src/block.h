@@ -3,6 +3,7 @@
 #pragma once
 
 #include "printf.h"
+#include "block_meta.h"
 
 #define MMAP_THRESHOLD      (128 * 1024)
 
