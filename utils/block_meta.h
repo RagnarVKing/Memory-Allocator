@@ -16,12 +16,11 @@
 	} while (0)
 
 /* Structure to hold memory block metadata */
-typedef struct block_meta block_meta;
 struct block_meta {
 	size_t size;
 	int status;
-	block_meta *prev;
-	block_meta *next;
+	struct block_meta *prev;
+	struct block_meta *next;
 };
 
 /* Block metadata status values */

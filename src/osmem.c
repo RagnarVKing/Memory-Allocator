@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <string.h>
 #include "osmem.h"
-// #include "block_meta.h"
 #include "block.h"
 
-block_meta *mmap_first(size_t size)
+struct block_meta *mmap_first(size_t size)
 {
-	block_meta *item = mmap(0, size + SIZE_T_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	struct block_meta *item = mmap(0, size + SIZE_T_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
 	DIE(item == MAP_FAILED, "Mmap failed");
 
@@ -21,9 +19,9 @@ block_meta *mmap_first(size_t size)
 }
 
 
-block_meta *sbrk_first(size_t size)
+struct block_meta *sbrk_first(size_t size)
 {
-	block_meta *item = sbrk(MMAP_THRESHOLD);
+	struct block_meta *item = sbrk(MMAP_THRESHOLD);
 
 	DIE(item == (void *)-1, "Sbrk failed");
 
@@ -36,9 +34,9 @@ block_meta *sbrk_first(size_t size)
 	return (item + 1);
 }
 
-block_meta *sbrk_second(size_t size)
+struct block_meta *sbrk_second(size_t size)
 {
-	block_meta *item = sbrk(MMAP_THRESHOLD);
+	struct block_meta *item = sbrk(MMAP_THRESHOLD);
 
 	DIE(item == (void *)-1, "Sbrk failed");
 
@@ -52,9 +50,9 @@ block_meta *sbrk_second(size_t size)
 }
 
 
-block_meta *mmap_last(size_t size)
+struct block_meta *mmap_last(size_t size)
 {
-	block_meta *item = mmap(0, size + SIZE_T_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	struct block_meta *item = mmap(0, size + SIZE_T_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
 	DIE(item == MAP_FAILED, "Mmap failed");
 
@@ -68,7 +66,7 @@ block_meta *mmap_last(size_t size)
 }
 
 
-block_meta *sbrk_last_verif(block_meta *item, size_t size)
+struct block_meta *sbrk_last_verif(struct block_meta *item, size_t size)
 {
 	if (item->size == size || item->size < size + SIZE_T_SIZE + ALIGNMENT) {
 		item->status = STATUS_ALLOC;
@@ -79,10 +77,10 @@ block_meta *sbrk_last_verif(block_meta *item, size_t size)
 	return (item + 1);
 }
 
-block_meta *sbrk_last_final(size_t size)
+struct block_meta *sbrk_last_final(size_t size)
 {
 	if (tail->status == STATUS_FREE) {
-		block_meta *item = sbrk(size - tail->size);
+		struct block_meta *item = sbrk(size - tail->size);
 
 		DIE(item == (void *)-1, "Sbrk failed");
 
@@ -91,7 +89,7 @@ block_meta *sbrk_last_final(size_t size)
 
 		return (tail + 1);
 	}
-	block_meta *item = sbrk(size + SIZE_T_SIZE);
+	struct block_meta *item = sbrk(size + SIZE_T_SIZE);
 
 	DIE(item == (void *)-1, "Sbrk failed");
 
@@ -104,9 +102,9 @@ block_meta *sbrk_last_final(size_t size)
 	return (item + 1);
 }
 
-block_meta *sbrk_last(size_t size)
+struct block_meta *sbrk_last(size_t size)
 {
-	block_meta *item = bm_list_find_size(size);
+	struct block_meta *item = bm_list_find_size(size);
 
 	if (!item)
 		return sbrk_last_final(size);
@@ -144,7 +142,7 @@ void *os_malloc(size_t size)
 
 
 
-void free_first(block_meta *item)
+void free_first(struct block_meta *item)
 {
 	item->status = STATUS_FREE;
 	item->next = item;
@@ -152,7 +150,7 @@ void free_first(block_meta *item)
 }
 
 
-void free_last_mmap(block_meta *item)
+void free_last_mmap(struct block_meta *item)
 {
 	item->prev->next = item->next;
 	item->next->prev = item->prev;
@@ -160,7 +158,7 @@ void free_last_mmap(block_meta *item)
 }
 
 
-void free_right(block_meta *item)
+void free_right(struct block_meta *item)
 {
 	item->size += item->next->size + SIZE_T_SIZE;
 	item->status = STATUS_FREE;
@@ -169,7 +167,7 @@ void free_right(block_meta *item)
 	item->next = item->next->next;
 }
 
-void free_left(block_meta *item)
+void free_left(struct block_meta *item)
 {
 	item->prev->size += SIZE_T_SIZE + item->size;
 
@@ -177,7 +175,7 @@ void free_left(block_meta *item)
 	item->prev->next = item->next;
 }
 
-void free_triple(block_meta *item)
+void free_triple(struct block_meta *item)
 {
 	item->prev->size += SIZE_T_SIZE + item->size + SIZE_T_SIZE + item->next->size;
 
@@ -185,12 +183,12 @@ void free_triple(block_meta *item)
 	item->prev->next = item->next->next;
 }
 
-void free_zero(block_meta *item)
+void free_zero(struct block_meta *item)
 {
 	item->status = STATUS_FREE;
 }
 
-void free_last_sbrk(block_meta *item)
+void free_last_sbrk(struct block_meta *item)
 {
 	if (item == head) {
 		if (item->next->status == STATUS_FREE)
@@ -227,7 +225,7 @@ void os_free(void *ptr)
 	if (!ptr)
 		return;
 
-	block_meta *item = (block_meta *)((char *)ptr - SIZE_T_SIZE);
+	struct block_meta *item = (struct block_meta *)((char *)ptr - SIZE_T_SIZE);
 
 	if (item->status == STATUS_MAPPED) {
 		if (head == head->next) {
@@ -254,32 +252,32 @@ void *os_calloc(size_t nmemb, size_t size)
 	if (!(nmemb && size))
 		return NULL;
 
-	block_meta *item;
+	struct block_meta *item;
 
 	size_t total_size = SIZE_T_SIZE + ALIGN(nmemb * size);
 
 	if (total_size >= (size_t)getpagesize()) {
 		if (!head) {
 			item = mmap_first(ALIGN(nmemb * size));
-			item = (block_meta *)((char *)item - SIZE_T_SIZE);
+			item = (struct block_meta *)((char *)item - SIZE_T_SIZE);
 			memset((char *)item + SIZE_T_SIZE, 0, ALIGN(nmemb * size));
 		} else {
 			item =  mmap_last(ALIGN(nmemb * size));
-			item = (block_meta *)((char *)item - SIZE_T_SIZE);
+			item = (struct block_meta *)((char *)item - SIZE_T_SIZE);
 			memset((char *)item + SIZE_T_SIZE, 0, ALIGN(nmemb * size));
 		}
 	} else {
 		if (!head) {
 			item = sbrk_first(ALIGN(nmemb * size));
-			item = (block_meta *)((char *)item - SIZE_T_SIZE);
+			item = (struct block_meta *)((char *)item - SIZE_T_SIZE);
 			memset((char *)item + SIZE_T_SIZE, 0, ALIGN(nmemb * size));
 		} else if (!tail) {
 			item = sbrk_second(ALIGN(nmemb * size));
-			item = (block_meta *)((char *)item - SIZE_T_SIZE);
+			item = (struct block_meta *)((char *)item - SIZE_T_SIZE);
 			memset((char *)item + SIZE_T_SIZE, 0, ALIGN(nmemb * size));
 		} else {
 			item = sbrk_last(ALIGN(nmemb * size));
-			item = (block_meta *)((char *)item - SIZE_T_SIZE);
+			item = (struct block_meta *)((char *)item - SIZE_T_SIZE);
 			memset((char *)item + SIZE_T_SIZE, 0, ALIGN(nmemb * size));
 		}
 	}
@@ -287,20 +285,20 @@ void *os_calloc(size_t nmemb, size_t size)
 }
 
 
-block_meta *realloc_simple(block_meta *destination, block_meta *item, size_t size)
+struct block_meta *realloc_simple(struct block_meta *destination, struct block_meta *item, size_t size)
 {
 	destination = os_malloc(size);
 	if (size > item->size)
 		size = item->size;
-	item = (block_meta *)((char *)item + SIZE_T_SIZE);
+	item = (struct block_meta *)((char *)item + SIZE_T_SIZE);
 	memmove(destination, item, size);
 	os_free(item);
 	return destination;
 }
 
-block_meta *realloc_split(block_meta *item, size_t size)
+struct block_meta *realloc_split(struct block_meta *item, size_t size)
 {
-	block_meta *fre = (block_meta *)((char *)item + size + SIZE_T_SIZE);
+	struct block_meta *fre = (struct block_meta *)((char *)item + size + SIZE_T_SIZE);
 
 	fre->size = item->size - size - SIZE_T_SIZE;
 	fre->status = STATUS_FREE;
@@ -316,12 +314,12 @@ block_meta *realloc_split(block_meta *item, size_t size)
 	return (item + 1);
 }
 
-block_meta *realloc_no_split(block_meta *item)
+struct block_meta *realloc_no_split(struct block_meta *item)
 {
 	return (item + 1);
 }
 
-block_meta *condition_one(block_meta *item, size_t size, block_meta *destination)
+struct block_meta *condition_one(struct block_meta *item, size_t size, struct block_meta *destination)
 {
 	if (item->status == STATUS_ALLOC) {
 		if (size > item->size) {
@@ -372,12 +370,12 @@ void *os_realloc(void *ptr, size_t size)
 		return NULL;
 	}
 
-	block_meta *item = (block_meta *)((char *)ptr - SIZE_T_SIZE);
+	struct block_meta *item = (struct block_meta *)((char *)ptr - SIZE_T_SIZE);
 
 	if (item->status == STATUS_FREE)
 		return NULL;
 
-	block_meta *destination = NULL;
+	struct block_meta *destination = NULL;
 
 	size = ALIGN(size);
 	if (size == item->size)

@@ -2,18 +2,19 @@
 
 #include "block.h"
 
-block_meta * head;
 
-block_meta *tail;
+struct block_meta *head;
 
-void bm_list_init_mmap(block_meta *item)
+struct block_meta *tail;
+
+void bm_list_init_mmap(struct block_meta *item)
 {
 	head = item;
 	head->prev = head;
 	head->next = head;
 }
 
-void bm_list_init_sbrk(block_meta *item)
+void bm_list_init_sbrk(struct block_meta *item)
 {
 	head = item;
 
@@ -25,7 +26,7 @@ void bm_list_init_sbrk(block_meta *item)
 
 		tail = head;
 	} else {
-		block_meta *fre = (block_meta *)((char *)item + item->size + SIZE_T_SIZE);
+		struct block_meta *fre = (struct block_meta *)((char *)item + item->size + SIZE_T_SIZE);
 
 		fre->size = MMAP_THRESHOLD - item->size - SIZE_T_SIZE - SIZE_T_SIZE;
 		fre->status = STATUS_FREE;
@@ -39,7 +40,7 @@ void bm_list_init_sbrk(block_meta *item)
 	}
 }
 
-void bm_list_init_sbrk2(block_meta *item)
+void bm_list_init_sbrk2(struct block_meta *item)
 {
 	tail = item;
 
@@ -51,7 +52,7 @@ void bm_list_init_sbrk2(block_meta *item)
 		item->size += MMAP_THRESHOLD - item->size - SIZE_T_SIZE - SIZE_T_SIZE;
 		head = tail;
 	} else {
-		block_meta *fre = (block_meta *)((char *)item + item->size + SIZE_T_SIZE);
+		struct block_meta *fre = (struct block_meta *)((char *)item + item->size + SIZE_T_SIZE);
 
 		fre->size = MMAP_THRESHOLD - item->size -  SIZE_T_SIZE - SIZE_T_SIZE;
 		fre->status = STATUS_ALLOC;
@@ -70,7 +71,7 @@ void bm_list_init_sbrk2(block_meta *item)
 	}
 }
 
-void bm_list_add_mmap(block_meta *item)
+void bm_list_add_mmap(struct block_meta *item)
 {
 	if (!item)
 		return;
@@ -81,12 +82,12 @@ void bm_list_add_mmap(block_meta *item)
 	head->prev = item;
 }
 
-void bm_list_add_mid(block_meta *item, size_t size)
+void bm_list_add_mid(struct block_meta *item, size_t size)
 {
 	if (!item)
 		return;
 
-	block_meta *fre = (block_meta *)((char *)item + size + SIZE_T_SIZE);
+	struct block_meta *fre = (struct block_meta *)((char *)item + size + SIZE_T_SIZE);
 
 	fre->size = item->size - size - SIZE_T_SIZE;
 	fre->status = STATUS_FREE;
@@ -101,7 +102,7 @@ void bm_list_add_mid(block_meta *item, size_t size)
 	item->size = size;
 }
 
-void bm_list_add_end(block_meta *item)
+void bm_list_add_end(struct block_meta *item)
 {
 	if (!item)
 		return;
@@ -113,10 +114,10 @@ void bm_list_add_end(block_meta *item)
 	tail = item;
 }
 
-block_meta *bm_list_find_size(size_t size)
+struct block_meta *bm_list_find_size(size_t size)
 {
-	block_meta *iter;
-	block_meta *item = NULL;
+	struct block_meta *iter;
+	struct block_meta *item = NULL;
 	size_t best_size = MMAP_THRESHOLD;
 
 	if (head == head->next)
