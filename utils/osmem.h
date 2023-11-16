@@ -6,8 +6,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "printf.h"
-
-#define MAP_ANONYMOUS       32
+#include <sys/mman.h>
+#include <unistd.h>
+#include <string.h>
 
 void *os_malloc(size_t size);
 void os_free(void *ptr);
