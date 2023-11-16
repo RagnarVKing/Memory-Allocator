@@ -4,6 +4,7 @@
 
 #include "printf.h"
 #include "block_meta.h"
+#include "osmem.h"
 
 #define MMAP_THRESHOLD      (128 * 1024)
 
